@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # Fabfile to delete out-of-date archives.
+from fabric.api import env, local, run
 import os
-from fabric.api import *
 
 env.hosts = ["52.3.241.47", "52.3.220.183"]
 env.user = 'ubuntu'
@@ -18,17 +18,12 @@ def do_clean(number=0):
     etc.
     """
     number = int(number)
-    if number in [0, 1]:
+    if number == 0 or number == 1:
         number = 1
+    else:
+        number += 1
 
-    archives = sorted(os.listdir("versions"))
-    if len(archives) > number:
-        [archives.pop() for i in range(number)]
-        with lcd("versions"):
-            [local("sudo rm ./{}".format(a)) for a in archives]
+    local("cd versions && ls -t | tail -n +{} | xargs rm -f".format(number))
 
-        with cd("/data/web_static/releases"):
-            archives = run("sudo ls -tr").split()
-            archives = [a for a in archives if "web_static_" in a]
-            [archives.pop() for i in range(number)]
-            [run("sudo rm -rf ./{}".format(a)) for a in archives]
+    run("cd /data/web_static/releases && ls -t | tail -n +{} | xargs rm -rf"
+        .format(number))
